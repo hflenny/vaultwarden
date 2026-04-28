@@ -1,0 +1,15 @@
+dbs:
+  - path: /data/db.sqlite3
+    replicas:
+      - name: r2
+        type: s3
+        bucket: ${R2_BUCKET}
+        path: vaultwarden
+        endpoint: ${R2_ENDPOINT}
+        region: auto
+        access-key-id: ${R2_ACCESS_KEY_ID}
+        secret-access-key: ${R2_SECRET_ACCESS_KEY}
+        force-path-style: true
+        retention: 720h
+        snapshot-interval: 24h
+        sync-interval: 5m

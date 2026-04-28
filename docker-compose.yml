@@ -1,0 +1,51 @@
+services:
+
+  vaultwarden:
+    build: .
+    image: vaultwarden-cf:local
+    container_name: vaultwarden
+    restart: unless-stopped
+    volumes:
+      - ./data:/data
+    environment:
+      - DOMAIN=https://vault.solenhamn.com
+      - SIGNUPS_ALLOWED=${SIGNUPS_ALLOWED:-false}
+      - ADMIN_TOKEN=${ADMIN_TOKEN}
+      - LOG_LEVEL=${LOG_LEVEL:-warn}
+      - TUNNEL_TOKEN=${CLOUDFLARE_TUNNEL_TOKEN}
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:80/alive"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "3"
+
+  litestream:
+    image: litestream/litestream:latest
+    container_name: vaultwarden-litestream
+    restart: unless-stopped
+    depends_on:
+      - vaultwarden
+    volumes:
+      - ./data:/data
+      - ./litestream.yml:/etc/litestream.yml:ro
+    environment:
+      - R2_BUCKET=${R2_BUCKET}
+      - R2_ENDPOINT=${R2_ENDPOINT}
+      - R2_ACCESS_KEY_ID=${R2_ACCESS_KEY_ID}
+      - R2_SECRET_ACCESS_KEY=${R2_SECRET_ACCESS_KEY}
+    command: replicate -config /etc/litestream.yml
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
