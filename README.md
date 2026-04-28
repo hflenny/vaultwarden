@@ -21,8 +21,13 @@ Tunnel, with continuous SQLite replication to Cloudflare R2 via Litestream.
 
 1. **Cloudflare Tunnel** — create a tunnel in Zero Trust → Networks → Tunnels.
    Add a public hostname `vault.solenhamn.com` → service
-   `http://localhost:80`. Copy the connector token into
+   `http://vaultwarden:80`. Copy the connector token into
    `CLOUDFLARE_TUNNEL_TOKEN`.
+
+   > **Note on the service address:** cloudflared and vaultwarden run in the
+   > same container, so `http://localhost:80` also works. We use
+   > `http://vaultwarden:80` (the Docker service name) because it remains
+   > correct if you ever split cloudflared into its own container.
 2. **R2** — create a bucket (e.g. `vaultwarden-backup`) and an API token
    with **Object Read & Write** scoped to that bucket. Note the
    account-level S3 endpoint
@@ -85,11 +90,10 @@ container is up the vault is reachable again at
 ## Notes
 
 - The custom image runs **two processes** in one container; Docker's
-  restart policy bounces the container if either dies (see `wait -n` in
-  `start.sh`).
+  restart policy bounces the container if either dies.
 - Cloudflare Tunnel terminates TLS at Cloudflare's edge; vaultwarden
   speaks plain HTTP on `:80` inside the container, never exposed to the
   host network.
-- Litestream's `sync-interval: 10s` means recovery point objective is
-  ~10 seconds. Snapshots are kept for 30 days (`retention: 720h`).
+- Litestream's `sync-interval: 5m` means recovery point objective is
+  ~5 minutes. Snapshots are kept for 30 days (`retention: 720h`).
 - `data/` is gitignored. Never commit `.env`.
